@@ -1,6 +1,6 @@
 /* istanbul ignore file */
-import { LedgerAccount, LiskLedger } from '@hirishh/lisk-ledger.js';
-
+//import { LedgerAccount, LiskLedger } from '@hirishh/lisk-ledger.js';
+import LiskApp from '@zondax/ledger-lisk';
 import {
   ADD_DEVICE,
 } from '../../constants';
@@ -10,7 +10,7 @@ import { LEDGER } from './constants';
 //              DEVICES LIST
 // ============================================ //
 let devices = [];
-
+const hdpath = `m/44'/134'/0/0/0`;
 /**
  * addDevice - function - Add a new device to the devices list.
  * @param {object} device - Device object coming from the ledger library
@@ -86,11 +86,19 @@ const checkIfInsideLiskApp = async ({
   let transport;
   try {
     transport = await transporter.open(device.path);
-    const liskLedger = new LiskLedger(transport);
-    const ledgerAccount = getLedgerAccount();
-    const account = await liskLedger.getPubKey(ledgerAccount.derivePath());
-    device.openApp = !!account;
+    console.info("getting transport")
+     const liskLedger = new LiskApp(transport);
+     //const ledgerAccount = getLedgerAccount();
+     console.info("getting pubkey")
+     const account = await liskLedger.getAddressAndPubKey(hdpath);
+     console.info(account.pubKey)
+     console.info(account.address)
+     device.openApp = (account.pubKey == undefined) ? false : true;
+     //device.openApp = !account;
+     console.info(device.openApp)
   } catch (e) {
+    console.info("CM DEBUG")
+    console.info(e)
     device.openApp = false;
   }
   if (transport) transport.close();
@@ -101,11 +109,11 @@ const getPublicKey = async (transporter, { device, data }) => {
   let transport = null;
   try {
     transport = await transporter.open(device.path);
-    const liskLedger = new LiskLedger(transport);
-    const ledgerAccount = getLedgerAccount(data.index);
-    const { publicKey } = await liskLedger.getPubKey(ledgerAccount, data.showOnDevice);
+    const liskLedger = new LiskApp(transport);
+    //const ledgerAccount = getLedgerAccount(data.index);
+    const response = await liskLedger.getAddressAndPubKey(hdpath);
     transport.close();
-    return publicKey;
+    return response.pubKey;
   } catch (error) {
     if (transport) transport.close();
     throw error;
@@ -116,11 +124,11 @@ const getAddress = async (transporter, { device, data }) => {
   let transport = null;
   try {
     transport = await transporter.open(device.path);
-    const liskLedger = new LiskLedger(transport);
+    const liskLedger = new LiskApp(transport);
     const ledgerAccount = getLedgerAccount(data.index);
-    const { address } = await liskLedger.getPubKey(ledgerAccount, data.showOnDevice);
+    const response = await liskLedger.showAddressAndPubKey(hdpath);
     transport.close();
-    return address;
+    return response.address;
   } catch (error) {
     if (transport) transport.close();
     throw error;
@@ -132,10 +140,10 @@ const signTransaction = async (transporter, { device, data }) => {
   let transport = null;
   try {
     transport = await transporter.open(device.path);
-    const liskLedger = new LiskLedger(transport);
+    const liskLedger = new LiskApp(transport);
     const ledgerAccount = getLedgerAccount(data.index);
     const txToBeSigned = Buffer.concat([data.networkIdentifier, data.transactionBytes]);
-    const signature = await liskLedger.signTX(ledgerAccount, txToBeSigned);
+    const signature = await liskLedger.sign(ledgerAccount, txToBeSigned);
     transport.close();
     return signature;
   } catch (error) {
@@ -148,9 +156,9 @@ const signMessage = async (transporter, { device, data }) => {
   let transport = null;
   try {
     transport = await transporter.open(device.path);
-    const liskLedger = new LiskLedger(transport);
+    const liskLedger = new LiskApp(transport);
     const ledgerAccount = getLedgerAccount(data.index);
-    const signature = await liskLedger.signMSG(ledgerAccount, data.message);
+    const signature = await liskLedger.sign(ledgerAccount, data.message);
     transport.close();
     return signature.slice(0, 64);
   } catch (error) {
