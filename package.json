@@ -118,6 +118,7 @@
     "@ledgerhq/hw-transport-node-hid": "6.6.0",
     "@liskhq/lisk-client": "6.0.0-alpha.31876",
     "@testing-library/react-hooks": "5.1.2",
+    "@zondax/ledger-lisk": "0.0.1",
     "await-to-js": "2.1.1",
     "bignumber.js": "8.0.1",
     "bip32": "1.0.4",
